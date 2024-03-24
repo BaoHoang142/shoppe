@@ -188,6 +188,45 @@
     color: #fff;
 }
 
+.list_search {
+    width: 600px;
+    display: flex;
+    justify-content: space-around;
+    height: 150px;
+    align-items: center;
+    margin: auto;
+    cursor: pointer;
+    
+}
+.list_search:hover {
+    width: 600px;
+    display: flex;
+    justify-content: space-around;
+    height: 150px;
+    align-items: center;
+    background-color: #d3d1d1;
+    cursor: pointer;
+}
+.list_search_nameProduct {
+    width: 100px;
+    height:60px ;
+    display: flex;
+    align-items: center;
+    text-align: center;
+}
+.list_search_imgProduct {
+    width: 150px;
+    height: 150px;
+    padding: 10px;
+}
+.list_search_priceProduct {
+    width: 100px;
+    height:60px ;
+    display: flex;
+    align-items: center;
+    color: #F7442E;
+    font-weight: 700;
+}
 
 
 

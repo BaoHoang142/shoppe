@@ -3,9 +3,178 @@ import Footer from "../../components/footer/Footer";
 import "./Register.css";
 import { ChangeEvent, useState } from "react";
 import { notification } from "antd";
+import { UserOutlined } from "@ant-design/icons";
+import { EyeInvisibleOutlined, EyeTwoTone } from "@ant-design/icons";
+import { Button, Input, Space } from "antd";
+import axios from "axios";
+import { getAuth, signInWithPopup } from "firebase/auth";
+import { initializeApp } from "firebase/app";
+import { GoogleAuthProvider } from "firebase/auth";
+interface User {
+  userName: string;
+  email: string;
+  phone: string;
+  password: string;
+  rePassword: string;
+}
 export default function Register() {
+  const navigate = useNavigate();
+  const [newUser, setNewUser] = useState<User>({
+    userName: "",
+    email: "",
+    phone: "",
+    password: "",
+    rePassword: "",
+  });
+  const [errorInput, setErrorInput] = useState({
+    errName: "",
+    errPass: "",
+    errPhone: "",
+    errEmail: ""
+  });
+  // validate
+  const validateInput = () => {
+    const regexName = /^.{6,}$/;
+    const regexPass = /^(?=.*[A-Za-z])(?=.*\d).{6,}$/;
+    const regexPhone = /^(?:\+84|0)(?:\d{9,10})$/;
+    const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    let check = true;
+    const err = {
+      errName: "",
+      errPass: "",
+      errPhone: "",
+      errEmail: ""
+    };
   
+    if (!regexName.test(newUser.userName.trim())) {
+      err.errName = "Tên có 6 ký tự trở lên";
+      check = false;
+    }
+    if (!regexPass.test(newUser.password)) {
+      err.errPass = "Mật khẩu ít nhất 6 ký tự chứa cả chữ cái và số";
+      check = false;
+    }
+    if (!regexPhone.test(newUser.phone)) {
+      err.errPhone = "Số điện thoại không hợp lệ";
+      check = false;
+    }
+    if (!regexEmail.test(newUser.email)) {
+      err.errEmail = "Email không hợp lệ";
+      check = false;
+    }
+    setErrorInput(err);
+    return check;
+  };
   
+  // lay du lieu nhap vao
+  const handleGetValue = (e: ChangeEvent<HTMLInputElement>) => {
+    setNewUser({ ...newUser, [e.target.name]: e.target.value });
+  };
+  console.log(newUser);
+  //   // configfibaes
+  const firebaseConfig = {
+    apiKey: "AIzaSyCTeh8snjndcWcK91CfnHLGJvrlA1AGZ4Q",
+    authDomain: "authen-c6580.firebaseapp.com",
+    projectId: "authen-c6580",
+    storageBucket: "authen-c6580.appspot.com",
+    messagingSenderId: "969210547285",
+    appId: "1:969210547285:web:73a1b1437edd63a223d8dc",
+  };
+
+  // Khởi tạo ứng dụng Firebase
+  const app = initializeApp(firebaseConfig);
+
+  // Lấy đối tượng auth từ Firebase
+  const auth = getAuth();
+  // Tạo một provider cho đăng nhập bằng Google
+  const provider = new GoogleAuthProvider();
+  const signUpWithGoogle = async () => {
+    console.log("first");
+    try {
+      const result = await signInWithPopup(auth, provider);
+      console.log(result);
+      const user = result.user;
+      const userGoogle = {
+        userName: user.displayName,
+        email: user.email,
+        password: user.uid,
+      };
+      try {
+        const res = await axios.post(
+          "http://localhost:8080/api/v1/auth/sign-up",
+          userGoogle
+        );
+        notification.success({
+          message: "Đăng ký thành công!",
+          placement: "top",
+          duration: 2,
+        });
+        navigate("/dangnhap");
+      } catch (error: any) {
+        console.log(error);
+        notification.error({
+          message: "Đăng ký thất bại!",
+          placement: "top",
+          duration: 2,
+        });
+      }
+      // const res = await axios.post(
+      //   "http://localhost:8080/api/v1/auth/loginGoogle",
+      //   userGoogle
+      // )
+      // console.log(res.data)
+      //  if(res.data.data.active === false){
+      //   message.error("Tài khoản đã bị khoá", 2)
+      //  }else{
+      //   localStorage.setItem("token", JSON.stringify(res.data.token))
+      //   localStorage.setItem("user", JSON.stringify(res.data.data))
+      //   message.success("Đăng nhập thành công", 2)
+      //   navigate("/")
+      //  }
+      //   if(res.data.data.role === "admin") navigate("/adminproduct")
+      //   else navigate("/")
+    } catch (error) {
+      console.error("Google authentication failed:", error);
+    }
+  };
+  const handleRegister = async (e: any) => {
+    e.preventDefault();
+    if (!newUser.userName || !newUser.password) {
+      notification.error({
+        message: "Vui lòng nhập đủ thông tin",
+      });
+      return;
+    }
+    if (newUser.password !== newUser.rePassword) {
+      notification.error({
+        message: "Xác nhận lại mật khẩu",
+      });
+      return;
+    }
+    let isValidate = validateInput();
+    if (isValidate) {
+      try {
+        const res = await axios.post(
+          "http://localhost:8080/api/v1/auth/sign-up",
+          newUser
+        );
+        console.log("111111");
+        notification.success({
+          message: "Đăng ký thành công!",
+          placement: "top",
+          duration: 2,
+        });
+        navigate("/dangnhap");
+      } catch (error: any) {
+        console.log(error);
+        notification.error({
+          message: "Đăng ký thất bại!",
+          placement: "top",
+          duration: 2,
+        });
+      }
+    }
+  };
   return (
     <>
       <div id="container">
@@ -17,10 +186,13 @@ export default function Register() {
                 alt=""
               />
             </div>
-            <div className="header__logo--text">
+            <div className="header__logo--text" style={{ marginTop: "20px" }}>
               <p>Shoppe</p>
             </div>
-            <div className="header__logo--registerText">
+            <div
+              className="header__logo--registerText"
+              style={{ marginTop: "20px" }}
+            >
               <p>Đăng ký</p>
             </div>
           </div>
@@ -39,53 +211,92 @@ export default function Register() {
                   className="form__register--input--email input"
                   style={{ marginTop: "-20px" }}
                 >
-                  <input
-                    type="text"
+                  <Input
+                    size="large"
                     placeholder="Tên đăng nhập"
                     className="input__Email"
+                    prefix={<UserOutlined />}
+                    name="userName"
+                    value={newUser.userName}
+                    onChange={handleGetValue}
                   />
-                  <p id="userName-error" style={{ paddingLeft: 150, color: "red",fontSize:"10px" }}>
-              </p>
+                  <p
+                    id="userName-error"
+                    style={{ paddingLeft: 150, color: "red", fontSize: "10px" }}
+                  >
+                    {errorInput.errName}
+                  </p>
                 </div>
                 <div className="form__register--input--email input">
-                  <input
-                    type="text"
+                  <Input
+                    size="large"
                     placeholder="Email"
                     className="input__Email"
+                    name="email"
+                    value={newUser.email}
+                    onChange={handleGetValue}
                   />
-                  <p id="userName-error" style={{ paddingLeft: 150, color: "red",fontSize:"10px" }}>
-              </p>
+                 <p
+                    id="userName-error"
+                    style={{ paddingLeft: 150, color: "red", fontSize: "10px" }}
+                  >
+                    {errorInput.errEmail}
+                  </p>
                 </div>
                 <div className="form__register--input--email input">
-                  <input
-                    type="text"
+                  <Input
+                    size="large"
                     placeholder="Số điện thoại"
                     className="input__Email"
+                    name="phone"
+                    value={newUser.phone}
+                    onChange={handleGetValue}
                   />
-                  <p id="userName-error" style={{ paddingLeft: 150, color: "red",fontSize:"10px" }}>
-              </p>
+                  <p
+                    id="userName-error"
+                    style={{ paddingLeft: 150, color: "red", fontSize: "10px" }}
+                  >
+                    {errorInput.errPhone}
+                  </p>
                 </div>
                 <div className="form__register--input--email input">
-                  <input
-                    type="text"
+                  <Input.Password
                     placeholder="Nhập mật khẩu"
                     className="input__Email"
+                    iconRender={(visible) =>
+                      visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />
+                    }
+                    name="password"
+                    value={newUser.password}
+                    onChange={handleGetValue}
                   />
-                  <p id="userName-error" style={{ paddingLeft: 150, color: "red",fontSize:"10px" }}>
-              </p>
+                  <p
+                    id="userName-error"
+                    style={{ paddingLeft: 150, color: "red", fontSize: "10px" }}
+                  ></p>
                 </div>
                 <div className="form__register--input--email input">
-                  <input
-                    type="text"
+                  <Input.Password
                     placeholder="Nhập lại mật khẩu"
                     className="input__Email"
+                    iconRender={(visible) =>
+                      visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />
+                    }
+                    name="rePassword"
+                    value={newUser.rePassword}
+                    onChange={handleGetValue}
                   />
-                  <p id="userName-error" style={{ paddingLeft: 150, color: "red",fontSize:"10px" }}>
-              </p>
+                  <p
+                    id="userName-error"
+                    style={{ paddingLeft: 150, color: "red", fontSize: "10px" }}
+                  >
+                    {errorInput.errPass}
+                  </p>
                 </div>
                 <div className="form__register--input--button">
                   <button
                     className="form__register--input--button__register"
+                    onClick={handleRegister}
                   >
                     Đăng ký
                   </button>
@@ -109,7 +320,10 @@ export default function Register() {
                     <p>Facebook</p>
                   </div>
                 </div>
-                <div className="form__register--social--gmail">
+                <div
+                  className="form__register--social--gmail"
+                  onClick={signUpWithGoogle}
+                >
                   <div className="logo__google">
                     <img
                       src="https://pngimg.com/uploads/google/google_PNG19635.png"
@@ -132,7 +346,10 @@ export default function Register() {
                 <p className="form__register--register__text">
                   Bạn đã có tài khoản?
                 </p>
-                <Link to={"/dangnhap"} className="form__register--register__link">
+                <Link
+                  to={"/dangnhap"}
+                  className="form__register--register__link"
+                >
                   Đăng nhập
                 </Link>
               </div>
